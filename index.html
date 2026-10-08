@@ -1,0 +1,82 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#070b1b">
+<meta name="description" content="MOONRUN — a free, original, open-source arcade coin dash game.">
+<meta property="og:title" content="MOONRUN — Arcade Coin Dash">
+<meta property="og:description" content="Collect coins, dash past drones, survive the countdown. Free, open source, and playable in your browser.">
+<title>MOONRUN — Arcade Coin Dash</title>
+<style>
+:root{color-scheme:dark;--bg:#070b1b;--ink:#edf3ff;--muted:#9faecc;--gold:#ffca4c;--pink:#ff5e9b;--cyan:#61ecfc}
+*{box-sizing:border-box}body{margin:0;background:radial-gradient(ellipse at 50% 0,#202851 0,#090e24 44%,#060916 100%);color:var(--ink);font-family:Inter,system-ui,-apple-system,Segoe UI,sans-serif;min-height:100dvh;display:flex;justify-content:center;align-items:center}
+main{width:min(1050px,100%);padding:18px}header,footer{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap}header{margin:0 0 14px}.brand{font-weight:1000;letter-spacing:.1em;font-size:clamp(21px,4vw,31px)}.brand span{color:var(--gold)}.mini{color:var(--muted);font-size:12px;letter-spacing:.08em}a{color:var(--cyan)}
+.hud{display:flex;gap:8px;flex-wrap:wrap}.stat{padding:8px 13px;border:1px solid #35416a;border-radius:11px;background:#111936d9;min-width:77px;text-align:center}.stat b{display:block;color:var(--gold);font-size:19px;font-variant-numeric:tabular-nums}.stat small{font-size:10px;color:var(--muted);letter-spacing:.1em}
+.stage{border:2px solid #39456c;border-radius:22px;overflow:hidden;position:relative;box-shadow:0 24px 85px #0009,0 0 75px #5d58ff18;background:#0b1328}
+canvas{display:block;width:100%;aspect-ratio:16 / 9;touch-action:none;outline:0}
+.overlay{position:absolute;inset:0;background:#050a1bc9;display:flex;align-items:center;justify-content:center;text-align:center;padding:25px;backdrop-filter:blur(8px)}
+.overlay.hidden{display:none}.panel{max-width:530px}.eyebrow{color:var(--cyan);font-weight:900;letter-spacing:.3em;font-size:11px}.panel h1{font-size:clamp(35px,7vw,68px);line-height:1.01;margin:11px 0;color:var(--gold);text-shadow:0 4px 0 #8d4b28}.panel p{font-size:clamp(13px,2vw,17px);line-height:1.65;color:#cbd5ec}.primary{border:0;border-radius:100px;padding:15px 38px;margin:13px 0 8px;background:linear-gradient(120deg,#ffdd6a,#ff9e57);color:#1a1632;font-size:17px;font-weight:1000;cursor:pointer;box-shadow:0 9px 22px #ffb54e35}.primary:hover{filter:brightness(1.12);transform:translateY(-1px)}.hint{font-size:12px;color:#a8b4d5}
+footer{padding:13px 5px 0;color:var(--muted);font-size:12px}
+#touch{display:none;justify-content:space-between;align-items:end;padding:14px 5px 0;gap:12px}.pad{display:grid;grid-template-columns:repeat(3,43px);grid-template-rows:repeat(3,43px);gap:3px}.pad button,.dash{background:#293457;border:1px solid #6e7aa8;border-radius:13px;color:white;font-weight:900;font-size:20px;touch-action:none}.pad .up{grid-column:2;grid-row:1}.pad .left{grid-column:1;grid-row:2}.pad .down{grid-column:2;grid-row:3}.pad .right{grid-column:3;grid-row:2}.dash{width:94px;height:94px;border-radius:50%;border-color:#dfaf53;background:#5d4352;color:var(--gold);font-size:16px}
+@media(pointer:coarse),(max-width:650px){main{padding:8px}.stage{border-radius:12px}header{gap:7px}.mini{display:none}.stat{min-width:58px;padding:5px 7px}.stat b{font-size:15px}#touch{display:flex}footer{font-size:10px}.panel h1{font-size:37px}.panel p{font-size:13px}.panel{max-width:390px}.primary{padding:11px 24px}}
+</style>
+</head>
+<body>
+<main>
+<header><div><div class="brand">🌙 MOON<span>RUN</span></div><div class="mini">ORIGINAL OPEN-SOURCE ARCADE GAME</div></div>
+<div class="hud"><div class="stat"><b id="score">0</b><small>SCORE</small></div><div class="stat"><b id="time">60</b><small>SECONDS</small></div><div class="stat"><b id="health">♥♥♥</b><small>LIVES</small></div><div class="stat"><b id="best">0</b><small>BEST</small></div></div></header>
+<div class="stage">
+<canvas id="game" width="960" height="540" tabindex="0" aria-label="MOONRUN arcade game"></canvas>
+<div class="overlay" id="overlay"><div class="panel"><div class="eyebrow">THE 60-SECOND CHALLENGE</div><h1 id="headline">CHASE THE<br>MOON.</h1><p id="message">Collect golden coins. Dodge the hunter drones. Chain pickups for bigger points. Dash through danger. How high can you score in one minute?</p><button id="play" class="primary" type="button">▶ START RUN</button><div class="hint">Move: WASD / Arrow keys · Dash: Space · Pause: P · Restart: R</div></div></div>
+</div>
+<div id="touch"><div class="pad"><button class="up" data-key="ArrowUp">▲</button><button class="left" data-key="ArrowLeft">◀</button><button class="down" data-key="ArrowDown">▼</button><button class="right" data-key="ArrowRight">▶</button></div><button class="dash" data-key="Space">DASH ⚡</button></div>
+<footer><span>Built for the browser. No login, ads, wallets, external scripts or tracking.</span><span><a href="https://github.com/STDSOLANA/supermariocoins" rel="noopener">Source on GitHub ↗</a> · MIT license</span></footer>
+</main>
+<script>
+"use strict";
+// MOONRUN: original game code, MIT licensed. See LICENSE.
+const W=960,H=540,c=document.getElementById("game"),ctx=c.getContext("2d");
+const ui={score:document.getElementById("score"),time:document.getElementById("time"),health:document.getElementById("health"),best:document.getElementById("best"),overlay:document.getElementById("overlay"),headline:document.getElementById("headline"),message:document.getElementById("message"),play:document.getElementById("play")};
+const keys=new Set();let mode="menu",elapsed=0,last=0,score=0,health=3,combo=0,lastCoin=0,coins=[],drones=[],particles=[],shake=0,spawnTick=0,invincible=0,flash=0;
+let best=0;try{best=Number(localStorage.getItem("moonrun-best")||0)||0}catch{}ui.best.textContent=best;
+const player={x:W/2,y:H/2,vx:0,vy:0,r:14,dash:0,cool:0,angle:0};
+const rnd=(a,b)=>a+Math.random()*(b-a);const clamp=(n,a,b)=>Math.max(a,Math.min(b,n));
+function sfx(freq=660,dur=.08,type="sine"){try{const AC=window.AudioContext||window.webkitAudioContext;if(!AC)return;const ac=sfx.ac||(sfx.ac=new AC());if(ac.state==="suspended")ac.resume();const osc=ac.createOscillator(),gain=ac.createGain();osc.type=type;osc.frequency.setValueAtTime(freq,ac.currentTime);osc.frequency.exponentialRampToValueAtTime(Math.max(80,freq*.55),ac.currentTime+dur);gain.gain.setValueAtTime(.045,ac.currentTime);gain.gain.exponentialRampToValueAtTime(.001,ac.currentTime+dur);osc.connect(gain).connect(ac.destination);osc.start();osc.stop(ac.currentTime+dur)}catch{}}
+function burst(x,y,color,count=13){for(let i=0;i<count;i++){const a=rnd(0,Math.PI*2),v=rnd(55,220);particles.push({x,y,vx:Math.cos(a)*v,vy:Math.sin(a)*v,life:rnd(.25,.7),max:.7,color,size:rnd(2,5)})}}
+function spawnCoin(){let x,y,tries=0;do{x=rnd(35,W-35);y=rnd(35,H-35);tries++}while(Math.hypot(x-player.x,y-player.y)<90&&tries<15);coins.push({x,y,r:10,bob:rnd(0,6),spin:rnd(0,7)})}
+function spawnDrone(){const side=Math.floor(rnd(0,4)),x=side===0?-15:side===1?W+15:rnd(10,W-10),y=side===2?-15:side===3?H+15:rnd(10,H-10);drones.push({x,y,r:13,speed:rnd(73,103)+elapsed*.65,wobble:rnd(0,7),stun:0})}
+function updateHud(){ui.score.textContent=score;ui.time.textContent=Math.max(0,Math.ceil(60-elapsed));ui.health.textContent="♥".repeat(health)||"—";ui.best.textContent=best}
+function start(){mode="playing";elapsed=0;score=0;health=3;combo=0;lastCoin=0;coins=[];drones=[];particles=[];shake=0;spawnTick=0;invincible=0;flash=0;keys.clear();Object.assign(player,{x:W/2,y:H/2,vx:0,vy:0,dash:0,cool:0});for(let i=0;i<7;i++)spawnCoin();for(let i=0;i<3;i++)spawnDrone();ui.overlay.classList.add("hidden");c.focus();updateHud();last=performance.now();requestAnimationFrame(loop)}
+function finish(){mode="over";if(score>best){best=score;try{localStorage.setItem("moonrun-best",best)}catch{}}updateHud();ui.headline.innerHTML=health?"TIME'S UP!":"RUN OVER!";ui.message.textContent="You scored "+score+" points. "+(score>=best?"New personal best! ":"")+"Collect coins fast for combos, then dash through the drones.";ui.play.textContent="↻ PLAY AGAIN";ui.overlay.classList.remove("hidden");sfx(190,.4,"sawtooth")}
+function togglePause(){if(mode==="playing"){mode="paused";ui.headline.textContent="PAUSED";ui.message.textContent="Take a breather. The moon can wait.";ui.play.textContent="▶ RESUME";ui.overlay.classList.remove("hidden")}else if(mode==="paused"){mode="playing";ui.overlay.classList.add("hidden");last=performance.now();requestAnimationFrame(loop);c.focus()}}
+function dash(){if(mode!=="playing"||player.cool>0)return;let dx=Number(keys.has("ArrowRight")||keys.has("KeyD"))-Number(keys.has("ArrowLeft")||keys.has("KeyA"));let dy=Number(keys.has("ArrowDown")||keys.has("KeyS"))-Number(keys.has("ArrowUp")||keys.has("KeyW"));const m=Math.hypot(dx,dy);if(m){player.vx=dx/m*660;player.vy=dy/m*660}else{player.vx=Math.cos(player.angle)*660;player.vy=Math.sin(player.angle)*660}player.dash=.19;player.cool=1.35;invincible=Math.max(invincible,.22);burst(player.x,player.y,"#61ecfc",18);sfx(310,.12,"triangle")}
+function update(dt){elapsed+=dt;flash=Math.max(0,flash-dt);shake=Math.max(0,shake-dt);invincible=Math.max(0,invincible-dt);player.cool=Math.max(0,player.cool-dt);player.dash=Math.max(0,player.dash-dt);
+const dx=Number(keys.has("ArrowRight")||keys.has("KeyD"))-Number(keys.has("ArrowLeft")||keys.has("KeyA")),dy=Number(keys.has("ArrowDown")||keys.has("KeyS"))-Number(keys.has("ArrowUp")||keys.has("KeyW")),m=Math.hypot(dx,dy)||1;
+if(!player.dash){const targetX=dx/m*265,targetY=dy/m*265,a=Math.min(1,dt*14);player.vx+=(targetX-player.vx)*a;player.vy+=(targetY-player.vy)*a;if(dx||dy)player.angle=Math.atan2(dy,dx)}
+player.x=clamp(player.x+player.vx*dt,player.r,W-player.r);player.y=clamp(player.y+player.vy*dt,player.r,H-player.r);
+if(elapsed-lastCoin>3)combo=0;
+for(let i=coins.length-1;i>=0;i--){const k=coins[i];k.spin+=dt*4;if(Math.hypot(k.x-player.x,k.y-player.y)<k.r+player.r+4){coins.splice(i,1);combo=Math.min(combo+1,6);lastCoin=elapsed;score+=10*combo;burst(k.x,k.y,"#ffd16b",12);sfx(550+combo*90,.065);spawnCoin()}}
+spawnTick+=dt;if(spawnTick>7&&drones.length<11){spawnTick=0;spawnDrone()}
+for(const d of drones){if(d.stun>0){d.stun-=dt;continue}const ang=Math.atan2(player.y-d.y,player.x-d.x);d.x+=Math.cos(ang)*d.speed*dt;d.y+=Math.sin(ang)*d.speed*dt;d.wobble+=dt*5;const distance=Math.hypot(d.x-player.x,d.y-player.y);
+if(distance<d.r+player.r){if(player.dash>0){d.stun=1.1;d.x-=Math.cos(ang)*40;d.y-=Math.sin(ang)*40;score+=20;burst(d.x,d.y,"#61ecfc",16);sfx(240,.1)}else if(invincible<=0){health--;invincible=1.45;shake=.26;flash=.18;burst(player.x,player.y,"#ff5e9b",21);sfx(120,.22,"sawtooth");if(health<=0){finish();return}}}}
+for(let i=particles.length-1;i>=0;i--){const p=particles[i];p.x+=p.vx*dt;p.y+=p.vy*dt;p.vx*=1-dt*2;p.vy*=1-dt*2;p.life-=dt;if(p.life<=0)particles.splice(i,1)}
+if(elapsed>=60){finish();return}updateHud()}
+function draw(t){ctx.clearRect(0,0,W,H);ctx.save();if(shake)ctx.translate(rnd(-9,9),rnd(-9,9));const bg=ctx.createLinearGradient(0,0,W,H);bg.addColorStop(0,"#111c40");bg.addColorStop(1,"#090e23");ctx.fillStyle=bg;ctx.fillRect(0,0,W,H);
+ctx.strokeStyle="#25355b";ctx.lineWidth=1;for(let x=0;x<W;x+=40){ctx.beginPath();ctx.moveTo(x,0);ctx.lineTo(x,H);ctx.stroke()}for(let y=0;y<H;y+=40){ctx.beginPath();ctx.moveTo(0,y);ctx.lineTo(W,y);ctx.stroke()}
+for(let i=0;i<34;i++){const x=((i*313.7)%W),y=((i*191.3)%H);ctx.fillStyle="#8191c3";ctx.globalAlpha=.2+.18*Math.sin(t*.9+i);ctx.fillRect(x,y,2,2)}ctx.globalAlpha=1;
+for(const k of coins){const bob=Math.sin(t*3+k.bob)*4;ctx.save();ctx.translate(k.x,k.y+bob);ctx.shadowColor="#ffc74a";ctx.shadowBlur=19;ctx.fillStyle="#ffbb43";ctx.beginPath();ctx.ellipse(0,0,Math.max(4,10*Math.abs(Math.cos(k.spin))),11,0,0,Math.PI*2);ctx.fill();ctx.shadowBlur=0;ctx.fillStyle="#fff2b4";ctx.fillRect(-1,-6,2,12);ctx.restore()}
+for(const d of drones){ctx.save();ctx.translate(d.x,d.y);ctx.rotate(d.wobble*.13);ctx.shadowColor=d.stun>0?"#61ecfc":"#ff5e9b";ctx.shadowBlur=16;ctx.fillStyle=d.stun>0?"#3c8290":"#da487d";ctx.beginPath();for(let i=0;i<6;i++){const a=i*Math.PI/3;ctx.lineTo(Math.cos(a)*d.r,Math.sin(a)*d.r)}ctx.closePath();ctx.fill();ctx.shadowBlur=0;ctx.fillStyle="#12182e";ctx.beginPath();ctx.arc(0,0,5,0,Math.PI*2);ctx.fill();ctx.fillStyle="#fff";ctx.fillRect(-2,-1,4,2);ctx.restore()}
+ctx.save();ctx.translate(player.x,player.y);ctx.rotate(player.angle);ctx.globalAlpha=invincible>0&&Math.floor(t*15)%2===0?.47:1;ctx.shadowColor=player.dash>0?"#fff9ab":"#60e7fc";ctx.shadowBlur=25;ctx.fillStyle=player.dash>0?"#fff2ab":"#61ecfc";ctx.beginPath();ctx.moveTo(18,0);ctx.lineTo(-12,-12);ctx.lineTo(-6,0);ctx.lineTo(-12,12);ctx.closePath();ctx.fill();ctx.shadowBlur=0;ctx.fillStyle="#12213c";ctx.beginPath();ctx.arc(-3,0,4,0,Math.PI*2);ctx.fill();ctx.restore();
+for(const p of particles){ctx.globalAlpha=Math.min(1,p.life/.45);ctx.fillStyle=p.color;ctx.fillRect(p.x,p.y,p.size,p.size)}ctx.globalAlpha=1;
+if(combo>1){ctx.fillStyle="#ffd16b";ctx.font="bold 20px system-ui";ctx.textAlign="center";ctx.fillText("×"+combo+" COMBO",W/2,38)}
+ctx.fillStyle="#172241";ctx.fillRect(20,H-22,160,7);ctx.fillStyle="#61ecfc";ctx.fillRect(20,H-22,160*(1-player.cool/1.35),7);ctx.fillStyle="#aab7da";ctx.font="11px system-ui";ctx.fillText("DASH",20,H-29);
+if(flash){ctx.fillStyle="rgba(255,90,145,"+(flash*1.5)+")";ctx.fillRect(0,0,W,H)}ctx.restore()}
+function loop(now){if(mode!=="playing")return;let dt=Math.min(.04,(now-last)/1000||0);last=now;update(dt);draw(now/1000);if(mode==="playing")requestAnimationFrame(loop)}
+ui.play.addEventListener("click",()=>mode==="paused"?togglePause():start());
+document.addEventListener("keydown",e=>{const relevant=["ArrowUp","ArrowDown","ArrowLeft","ArrowRight","Space","KeyW","KeyA","KeyS","KeyD","KeyP","KeyR","Enter"];if(relevant.includes(e.code))e.preventDefault();if(e.repeat&&["Space","KeyP","KeyR","Enter"].includes(e.code))return;keys.add(e.code);if(e.code==="Space")dash();if(e.code==="KeyP")togglePause();if(e.code==="KeyR")start();if(e.code==="Enter"&&mode!=="playing"){mode==="paused"?togglePause():start()}});
+document.addEventListener("keyup",e=>keys.delete(e.code));window.addEventListener("blur",()=>{keys.clear();if(mode==="playing")togglePause()});
+document.querySelectorAll("[data-key]").forEach(el=>{const key=el.dataset.key;function on(e){e.preventDefault();keys.add(key);if(key==="Space")dash()}function off(e){e.preventDefault();keys.delete(key)}el.addEventListener("pointerdown",on);["pointerup","pointercancel","pointerleave"].forEach(t=>el.addEventListener(t,off))});
+draw(0);
+</script>
+</body>
+</html>
